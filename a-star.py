@@ -1,2 +1,8 @@
+import sys
+
+
 class AStar:
-    test = ''
+    _fileName: str
+
+    def __init__(self) -> None:
+        self._fileName =

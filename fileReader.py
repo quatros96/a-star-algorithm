@@ -1,4 +1,3 @@
-from io import TextIOWrapper
 import typing as type
 import fnmatch
 from os import listdir
@@ -9,8 +8,8 @@ class FileReader:
     _graphsDir: str = './graphs'
     _selectedFile: str = ''
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, fileName: str) -> None:
+        self._selectedFile = fileName
 
     def getDirectoryGraphFiles(self) -> type.List[str]:
         foundGraphFiles = [file for file in listdir(self._graphsDir) if (
@@ -28,10 +27,11 @@ class FileReader:
             else:
                 print('This file does not exist! Try again...')
 
-    def readSelectedFile(self) -> None:
+    def readSelectedFile(self) -> type.Tuple[type.List[type.Tuple[int, int]
+                                                       ], int, int, type.List[type.List[float]]]:
         try:
             if self._selectedFile == '' or self._selectedFile not in self.getDirectoryGraphFiles():
-                raise Exception('Invalid file or file not set!')
+                raise Exception('Invalid file or file is not provided!')
             with open(self._graphsDir + '/' + self._selectedFile) as file:
                 try:
                     vertexes: type.List[type.Tuple[int, int]
@@ -46,6 +46,7 @@ class FileReader:
                     print(start)
                     print(end)
                     print(adjacencyMatrix)
+                    return vertexes, start, end, adjacencyMatrix
                 except Exception as e:
                     print(e)
         except EnvironmentError as filErr:
@@ -84,8 +85,3 @@ class FileReader:
             if len(values) != len(result):
                 raise Exception('Matrix is not square!')
         return result
-
-
-tocos = FileReader()
-tocos.selectFile()
-tocos.readSelectedFile()
