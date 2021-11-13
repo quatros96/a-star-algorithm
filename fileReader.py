@@ -42,15 +42,12 @@ class FileReader:
                     end: int = startEnd[1]
                     adjacencyMatrix: type.List[type.List[float]
                                                ] = self.readAdjacencyMatrixFromFile(file)
-                    print(vertexes)
-                    print(start)
-                    print(end)
-                    print(adjacencyMatrix)
                     return vertexes, start, end, adjacencyMatrix
                 except Exception as e:
                     print(e)
         except EnvironmentError as filErr:
             print('File error!: ', filErr)
+        return vertexes, start, end, adjacencyMatrix
 
     def readVertexesFromFile(self, file: type.TextIO) -> type.List[type.Tuple[int, int]]:
         line: str = file.readline()

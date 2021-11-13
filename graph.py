@@ -1,21 +1,89 @@
+import math
 import typing as type
+from math import dist
+
 from fileReader import FileReader
-from copy import deepcopy
+from vertex import Vertex
 
 
 class Graph:
-    _vertexes: type.List[type.Tuple[int, int]]
-    _start: type.Tuple[int, int]
-    _end: type.Tuple[int, int]
+    _vertexesList: type.List[type.Tuple[int, int]]
+    _vertexes: type.List[Vertex] = []
+    _start: Vertex
+    _end: Vertex
     _adjacencyMatrix: type.List[type.List[float]]
     _fileReader: FileReader
 
-    currentVertex: type.Tuple[int, int]
-
     def __init__(self, fileName: str) -> None:
         self._fileReader = FileReader(fileName)
-        self._vertexes, self._start, self._end, self._adjacencyMatrix = self._fileReader.readSelectedFile()
-        self.currentVertex = deepcopy(self._start)
+        startName: int
+        endName: int
+        self._vertexesList, startName, endName, self._adjacencyMatrix = self._fileReader.readSelectedFile()
+        self._start = Vertex(startName, self._vertexesList[startName - 1])
+        self._end = Vertex(endName, self._vertexesList[endName - 1])
+        self._prepareVertexes()
 
-    def findNeighboursOf(self, vertex: type.Tuple[int, int]) -> type.List[type.Tuple[int, int]]:
-        pass
+    def _prepareVertexes(self) -> None:
+        for count, vertex in enumerate(self._vertexesList):
+            self._vertexes.append(Vertex(count + 1, vertex))
+
+    def _generateVertexNameToValueDict(self) -> type.Dict[int, float]:
+        result: type.Dict[int, float] = {}
+        for vertex in self._vertexes:
+            result[vertex.name] = float('inf')
+        return result
+
+    def _findNeighboursOf(self, vertex: Vertex) -> type.List[Vertex]:
+        result: type.List[Vertex] = []
+        for count, value in enumerate(self._adjacencyMatrix[vertex.name - 1]):
+            if value != 0:
+                match = [x for x in self._vertexes if x.name == count + 1]
+                result.append(match[0])
+        return result
+
+    def _h(self, vertex: Vertex) -> float:
+        return dist(vertex.position, self._end.position)
+
+    def _findVertexWithSmallestFFrom(self, vertexes: type.List[Vertex], g: type.Dict[int, float]) -> Vertex:
+        vertexWithSmallestF: Vertex = vertexes[0]
+        for vertex in vertexes:
+            if self._h(vertex) + g[vertex.name] < self._h(vertexWithSmallestF) + g[vertexWithSmallestF.name]:
+                vertexWithSmallestF = vertex
+        return vertexWithSmallestF
+
+    def _getEdgeWeight(self, vertex1name: int, vertex2name: int) -> float:
+        return self._adjacencyMatrix[vertex1name - 1][vertex2name - 1]
+
+    def _pathReconstruction(self, cameFrom: type.Dict[int, int]) -> type.List[int]:
+        endName: int = self._end.name
+        currentName = endName
+        result: type.List[int] = [endName]
+        while currentName != self._start.name:
+            result.append(cameFrom[currentName])
+            currentName = cameFrom[currentName]
+        result.reverse()
+        return result
+
+    def aStar(self) -> type.List[int]:
+        workingPoints: type.List[Vertex] = [self._start]
+        cameFrom: type.Dict[int, int] = {}
+        g: type.Dict[int, float] = self._generateVertexNameToValueDict()
+        g[self._start.name] = 0
+        f: type.Dict[int, float] = self._generateVertexNameToValueDict()
+        f[self._start.name] = self._h(self._start)
+
+        while len(workingPoints) > 0:
+            x: Vertex = self._findVertexWithSmallestFFrom(workingPoints, g)
+            if x == self._end:
+                return self._pathReconstruction(cameFrom)
+            workingPoints.remove(x)
+            for neighbour in self._findNeighboursOf(x):
+                temp_g = g[x.name] + \
+                    self._getEdgeWeight(x.name, neighbour.name)
+                if temp_g < g[neighbour.name]:
+                    cameFrom[neighbour.name] = x.name
+                    g[neighbour.name] = temp_g
+                    f[neighbour.name] = g[neighbour.name] + self._h(neighbour)
+                    if neighbour not in workingPoints:
+                        workingPoints.append(neighbour)
+        return []
